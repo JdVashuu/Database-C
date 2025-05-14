@@ -1,15 +1,35 @@
 describe 'database' do
+  # Use a constant for the test database name
+  TEST_DB_NAME = 'test.db'
+
+  # Before each test, ensure the database is clean
+  before do
+    # Properly delete the test database file before each test
+    File.delete(TEST_DB_NAME) if File.exist?(TEST_DB_NAME)
+  end
+
+  # After all tests, clean up the test database
+  after(:all) do
+    File.delete(TEST_DB_NAME) if File.exist?(TEST_DB_NAME)
+  end
+
   def run_script(commands)
     raw_output = nil
-    IO.popen("./db", "r+") do |pipe|
-      commands.each do |command|
-        pipe.puts(command)
-      end
-      pipe.close_write
+    begin
+      IO.popen("./db #{TEST_DB_NAME}", "r+") do |pipe|
+        commands.each do |command|
+          pipe.puts(command)
+        end
+        pipe.close_write
 
-      raw_output = pipe.gets(nil)
+        raw_output = pipe.gets(nil)
+      end
+      raw_output.split("\n")
+    rescue => e
+      puts "Error executing database commands: #{e.message}"
+      puts e.backtrace
+      []
     end
-    raw_output.split("\n")
   end
 
   it 'insert and retrieves a row' do
